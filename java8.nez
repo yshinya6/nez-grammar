@@ -296,7 +296,7 @@ FieldModifier                      = Annotation
                                    / "volatile"  { #Volatile }
 
 //constant
-ConstantDeclaration                = { $anno(ConstantModifiers)? $type(Type) $list(InitDeclList) #JavaInterfaceConstantDecl } ";"
+ConstantDeclaration                = { $anno(ConstantModifiers)? $type(Type) $list(InitDeclList) #ConstantDecl } ";"
 ConstantModifiers                  = { $(ConstantModifier)+ #Modifiers }
 ConstantModifier                   = Annotation
                                    / "public" { #Public }
@@ -408,7 +408,7 @@ Statement                          = Block
                                    / { "throw" $expr(Expression) #Throw } ";"
                                    / { "synchronized" "(" $cond(Expression) ")" $body(Block) #Synchronized }
                                    / { $label(Identifier) ":" #Label }
-                                   / Expression ";"
+                                   / { $expr(Expression) ";" #ExprStatement}
                                    / ";" { #Empty }
 
 // try-catch-finally
@@ -573,7 +573,7 @@ HEX_ESCAPE                         = '\\' 'u'+ HEXDIGIT HEXDIGIT HEXDIGIT HEXDIG
 
 /* Example */
 
-// The traditional "Hello, world!" program can be written in Java 
+// The traditional "Hello, world!" program can be written in Java
 example TypeDeclaration&File '''
 class HelloWorldApp {
     public static void main(String[] args) {
@@ -585,7 +585,7 @@ class HelloWorldApp {
 // Generics
 example File '''
 package java.util.List;
-public interface List<E> { 
+public interface List<E> {
     void add(E x);
     Iterator<E> iterator();
 }
@@ -641,7 +641,7 @@ int a = 1, b
 '''
 
 example VariableDeclaration '''
-int[] anArray = { 
+int[] anArray = {
     1, 2,
     3, 4
 }
@@ -708,11 +708,11 @@ example Expression '''
 
 example Expression ~a47e9fd '''
 x
-''' 
+'''
 
 example Expression  ~fdb051 '''
 Apple
-''' 
+'''
 
 /* Literal (standard) */
 
