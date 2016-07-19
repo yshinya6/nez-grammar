@@ -1,0 +1,13 @@
+File = _ { $(Comment)*  #CommentList} _ EOT
+Comment = BlockComment
+        / LineComment
+BlockComment = '/*' {  ( !'*/' . )*  #BlockComment } '*/' _
+LineComment = '//' { ( !'\n' . )* #LineComment } _
+
+/* Code Layout (Whitespace) */
+_                                  = NONCOMMENT
+S                                  = [ \n\r\t\u000B\u000C]
+NONCOMMENT = (!'/*' !'//' .)*
+EOL                                = '\r'? '\n'
+                                   / !.
+EOT                                = !.
