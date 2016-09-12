@@ -1,0 +1,145 @@
+File                      = _ { ( $(TopLevel) / _ )* #Source } EOT
+_                         = ( S / BLOCKCOMMENT / LINECOMMENT )*
+S                         = [ \n\r\t\u000B\u000C]
+BLOCKCOMMENT              = '/*' ( !'*/' . )* '*/'
+LINECOMMENT               = '//' ( !'\n' . )*
+EOT                       = !.
+Name                      = { NAME #Name } _
+NAME                      = !DIGIT !( KEYWORD !W ) W+
+DIGIT                     = [0-9]
+W                         = [a-zA-Z0-9$_]
+TopLevel                  = Declaration
+                          / { #Empty } ";"
+KEYWORD                   = 'else'
+                          / 'if'
+                          / 'return'
+                          / 'int'
+                          / 'long'
+                          / 'string'
+                          / 'boolean'
+                          / 'true'
+                          / 'false'
+
+example File '''
+int fib(int n) {
+  if(n < 3) {return 1;}
+  return fib(n);
+}
+'''
+
+// Declaration
+Declaration               = FunctionDeclaration
+                          / VariableDeclaration
+FunctionDeclaration       = { $type(Type) _ $name(Name) _ "(" $list(FunctionParamList) ")" (_ $body(Block) / _ ";") #Function }
+                          /*/ { $type(Type) _ $(Block) #Function }*/
+FunctionParamList         = { ( $(FunctionParam) ( "," $(FunctionParam) )* )? ( "," "..." )? #List }
+FunctionParam             = { $type(Type) _ $name(Name)? #Param } _
+VariableDeclaration       = { $type(Type) _ $list(VariableList) ";" #Declaration }
+VariableList              = { $(InitDecl) ( "," _ $(InitDecl) )*  #VarList}
+InitDecl                  = { $name(Name) ( "=" _ $expr(Initializer) )? #VarDecl } _
+Initializer               = ConstantExpression
+
+example Declaration int a = 0;
+example VariableDeclaration ~0cf1e0 int a;
+example VariableDeclaration ~83437a int a,b,c;
+example VariableDeclaration ~ef2263 int a=0;
+example VariableDeclaration ~4bd8c5 int a=0, b=1;
+
+// Type
+Type                      = PrimaryType
+PrimaryType               = { "int" #TInt }
+                          / { "boolean" #TBoolean }
+                          / { "string" #TString }
+                          / { "long" #TString }
+
+// Block, Statement
+Block                     = { "{" ( $(Statement) / $(Declaration) / _ )* "}" #Block }
+Statement                 = Block
+                          / { "if" _ "(" $cond(Expression) ")" $then(Block) ( "else" _ $else(Block) )? #If }
+                          / { "return" _ $expr(Expression)? ";" #Return }
+                          / { $expr(Expression) ";" #ExpressionStatement }
+
+example Block ~8909e9 '''
+{
+}
+'''
+example Block ~0038ad '''
+{
+a;
+}
+'''
+example Block ~6bba1c '''
+{
+a=0;
+}
+'''
+example Statement ~1591a2 '''
+if(c){
+}
+'''
+
+// Expression
+Expression                = ConditionalExpression {$ "," $(ConditionalExpression) #Expression }*
+ConstantExpression        = ConditionalExpression
+ConditionalExpression     = EqualityExpression {$left ("||" #Or / "&&" #And) $right(EqualityExpression) }*
+EqualityExpression        = RelationalExpression {$left ("==" #Equals / "!=" #NotEquals) $right(RelationalExpression) }*
+RelationalExpression      = UnaryExpression {$left ("<" #LessThan / ">" #GreaterThan) $right(UnaryExpression) }*
+UnaryExpression           = PostfixExpression
+                          / { "!" $expr(UnaryExpression) #Not }
+PostfixExpression         = PrimaryExpression {$recv _FunctionCall }*
+_FunctionCall             = $({ "(" _ArgumentExpressionList? ")" #List }) #Apply
+_ArgumentExpressionList   = $(Expression) ( "," $(Expression) )*
+PrimaryExpression         = Constant
+                          / "(" Expression ")"
+                          / Name
+
+//Literal
+Constant                  = CInteger
+                          / CBoolean
+                          / CString
+                          / CNull
+
+CInteger                  = { DECIMAL #Integer } _
+DECIMAL                   = [1-9] DIGIT* / '0'
+CBoolean                  = "true" { #True } _
+                          / "false" { #False } _
+CString                   = '"' { STRING_CONTENT* #String } '"' _
+STRING_CONTENT            = ![\"\n\\] .
+CNull                     = "null" { #Null } _
+
+
+example Constant 1
+
+"="                       = '=' !'=' _
+"."                       = '.' _
+"'"                       = '\'' _
+"("                       = '(' _
+")"                       = ')' _
+"{"                       = '{' _
+"["                       = '[' _
+"]"                       = ']' _
+","                       = ',' _
+"..."                     = '...' _
+":"                       = ':' ![>] _
+"<"                       = '<' ![=] _
+">"                       = '>' ![=] _
+"=="                      = '==' _
+"!="                      = '!=' _
+"&&"                      = '&&' _
+"||"                      = '||' _
+";"                       = ';' _
+"}"                       = '}' _
+"!"                       = '!' !'=' _
+"string"                  = 'string' !W
+"int"                     = 'int' !W
+"boolean"                 = 'boolean' !W
+"long"                    = 'long' !W
+"if"                      = 'if' !W
+"for"                     = 'for' !W
+"else"                    = 'else' !W
+"return"                  = 'return' !W
+"false"                   = 'false' !W
+"true"                    = 'true' !W
+"null"                    = 'null' !W
+
+// formatted by $ nez format
